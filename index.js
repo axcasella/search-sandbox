@@ -1,11 +1,11 @@
 import { PineconeClient } from "@pinecone-database/pinecone";
 import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
-import { TextLoader } from "langchain/document_loaders/text";
-import { PDFLoader } from "langchain/document_loaders/pdf";
+import { TextLoader } from "langchain/document_loaders/fs/text";
+import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import * as dotenv from "dotenv";
-import { createPineconeIndex } from "./1-createPineconeIndex.js";
-import { updatePinecone } from "./2-updatePinecone.js";
-import { queryPineconeVectorStoreAndQueryLLM } from "./3-queryPineconeVectorStoreAndQueryLLM.js";
+import { createPineconeIndex } from "./createPineconeIndex.js";
+import { updatePinecone } from "./updatePinecone.js";
+import { queryPineconeAndQueryLLM } from "./queryPineconeAndLLM.js";
 
 dotenv.config();
 
@@ -14,41 +14,21 @@ const loader = new DirectoryLoader("./documents", {
   ".pdf": (path) => new PDFLoader(path),
 });
 
-const docs = await loader.load();
+// const docs = await loader.load();
+// console.log("docs", docs.length);
 
-// import { Configuration, OpenAIApi } from "openai";
-// import express from "express";
-// import bodyParser from "body-parser";
-// import cors from "cors";
+const question = "Which company was most profitable in 2022 between blackstone, KKR, and Apollo?";
+const indexName = "test-pe-index";
+const vectorDimension = 1536;
 
-// const configuration = new Configuration({
-//   organization: "org-OqXxaHHtx4RLvFS592zWYq9r",
-//   apiKey: "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",
-// });
+const client = new PineconeClient();
+await client.init({
+  apiKey: process.env.PINECONE_API_KEY,
+  environment: process.env.PINECONE_ENVIRONMENT,
+});
 
-// const openai = new OpenAIApi(configuration);
-
-// const app = express();
-// const port = 3000;
-
-// app.use(bodyParser.json());
-// app.use(cors());
-
-// app.post("/", async(req, res) => {
-//   const { message } = req.body;
-
-//   const completion = await openai.createChatCompletion({
-//     model: "gpt-3.5-turbo",
-//     messages: [
-//       {role: "user", content: `${message}`},
-//     ]
-//   });
-
-//   res.json({
-//     completion: completion.data.choices[0].message,
-//   })
-// })
-
-// app.listen(port, () => {
-//   console.log("app running on port", port);
-// })
+(async () => {
+  // await createPineconeIndex(indexName, vectorDimension, client);
+  // await updatePinecone(indexName, docs, client);
+  await queryPineconeAndQueryLLM(question, indexName, client);
+})();
