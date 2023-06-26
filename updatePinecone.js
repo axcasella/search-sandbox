@@ -10,22 +10,23 @@ export const updatePinecone = async (indexName, docs, client) => {
     console.log("processing doc", doc.metadata.source);
     const filePath = doc.metadata.source;
     const text = doc.pageContent;
+    console.log("\npageContent\n", text);
+    console.log();
 
     console.log("splitting text into chunks");
     const textSplitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 1000,
+      chunkSize: 500,
+      chunkOverlap: 200,
     });
     const chunks = await textSplitter.createDocuments([text]);
     console.log();
     console.log("finished splitting text into chunks size", chunks.length);
-    console.log("finished splitting text into chunks (before replace)", chunks);
     console.log();
 
     const embeddingsArrays = await new OpenAIEmbeddings().embedDocuments(
-      chunks.map((chunk) => {
-        chunk.pageContent.replace(/\n/g, " ");
-        console.log("after chunking", chunk.pageContent);
-      })
+      chunks.map((chunk) => 
+        chunk.pageContent.replace(/\n/g, " ")
+      )
     )
     
     console.log("finished embedding document", doc.metadata.source);
@@ -37,6 +38,9 @@ export const updatePinecone = async (indexName, docs, client) => {
 export const upsertVectors = async (filePath, chunks, embeddingsArrays, index) => {
   const batchSize = 100;
   let batch = [];
+
+  console.log("chunks.length", chunks.length);
+  console.log("embeddingsArrays.length", embeddingsArrays.length);
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
@@ -55,17 +59,25 @@ export const upsertVectors = async (filePath, chunks, embeddingsArrays, index) =
 
     // upsert vectors in batches of 100
     if (batch.length === batchSize || i === chunks.length - 1) {
-      await index.upsert({
-        upsertRequest: {
-          vectors: batch,
-        }
-      });
+      console.log("\nbatch", batch);
+      console.log(`starting to upsert to pinecone with ${batch.length} vectors`);
+      try {
+        const result = await index.upsert({
+          upsertRequest: {
+            vectors: batch,
+          }
+        });
 
+        console.log(`upsert ${result.upsertedCount} done , resetting batch`);
+      } catch (err) {
+        console.log("error upserting vectors", err);
+      }
+      
       // reset batch
       batch = [];
     }
   }
 
-  console.log(`Pinecone index updated with ${chunks.length} vectors for ${filePath}`);
+  console.log(`Pinecone index updated for ${filePath}`);
 }
 

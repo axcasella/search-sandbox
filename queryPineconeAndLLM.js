@@ -14,7 +14,7 @@ export const queryPineconeAndQueryLLM = async (question, indexName, client) => {
   let queryResponse = await index.query({
     queryRequest: {
       vector: queryEmbedding,
-      topK: 5,
+      topK: 10,
       includeMetadata: true,
       includeValues: true,
     }

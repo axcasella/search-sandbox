@@ -14,10 +14,10 @@ const loader = new DirectoryLoader("./documents", {
   ".pdf": (path) => new PDFLoader(path),
 });
 
-// const docs = await loader.load();
-// console.log("docs", docs.length);
+const docs = await loader.load();
+console.log("docs length: ", docs.length);
 
-const question = "Which company was most profitable in 2022 between blackstone, KKR, and Apollo?";
+const question = "How does apollo plan on increasing revenue in 2023";
 const indexName = "test-pe-index";
 const vectorDimension = 1536;
 
@@ -28,7 +28,7 @@ await client.init({
 });
 
 (async () => {
-  // await createPineconeIndex(indexName, vectorDimension, client);
-  // await updatePinecone(indexName, docs, client);
+  await createPineconeIndex(indexName, vectorDimension, client);
+  await updatePinecone(indexName, docs, client);
   await queryPineconeAndQueryLLM(question, indexName, client);
 })();
