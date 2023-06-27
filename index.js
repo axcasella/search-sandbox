@@ -1,11 +1,9 @@
-import { PineconeClient } from "@pinecone-database/pinecone";
 import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 import { TextLoader } from "langchain/document_loaders/fs/text";
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import * as dotenv from "dotenv";
-import { createPineconeIndex } from "./createPineconeIndex.js";
-import { updatePinecone } from "./updatePinecone.js";
-import { queryPineconeAndQueryLLM } from "./queryPineconeAndLLM.js";
+import { QdrantVectorStore } from "langchain/vectorstores/qdrant";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 
 dotenv.config();
 
@@ -17,18 +15,21 @@ const loader = new DirectoryLoader("./documents", {
 const docs = await loader.load();
 console.log("docs length: ", docs.length);
 
-const question = "How does apollo plan on increasing revenue in 2023";
-const indexName = "test-pe-index";
-const vectorDimension = 1536;
-
-const client = new PineconeClient();
-await client.init({
-  apiKey: process.env.PINECONE_API_KEY,
-  environment: process.env.PINECONE_ENVIRONMENT,
-});
+const question = "What is apollo's revenue in Q2 2022";
+const collectionName = "test-pe";
 
 (async () => {
-  await createPineconeIndex(indexName, vectorDimension, client);
-  await updatePinecone(indexName, docs, client);
-  await queryPineconeAndQueryLLM(question, indexName, client);
+  const vectorStore = await QdrantVectorStore.fromDocuments(
+    docs,
+    new OpenAIEmbeddings(),
+    {
+      url: process.env.QDRANT_URL,
+      collectionName: collectionName,
+    }
+  );
+  
+  console.log("\nNow asking question\n", question);
+  const response = await vectorStore.similaritySearch(question, 2);
+  
+  console.log("\n Answer: ", response);
 })();
