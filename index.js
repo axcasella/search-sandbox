@@ -17,7 +17,7 @@ const loader = new DirectoryLoader("./documents", {
 const docs = await loader.load();
 console.log("docs length: ", docs.length);
 
-const question = "How does apollo plan on increasing revenue in 2023";
+const question = "what is blackstone's total revenue for the year";
 const indexName = "test-pe-index";
 const vectorDimension = 1536;
 

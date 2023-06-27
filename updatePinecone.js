@@ -1,5 +1,6 @@
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { v4 as uuidv4 } from 'uuid';
 
 export const updatePinecone = async (indexName, docs, client) => {
   const index = client.Index(indexName);
@@ -15,7 +16,8 @@ export const updatePinecone = async (indexName, docs, client) => {
 
     console.log("splitting text into chunks");
     const textSplitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
+      characters: ['.', '\n', '\n\n'],
+      chunkSize: 1000,
       chunkOverlap: 200,
     });
     const chunks = await textSplitter.createDocuments([text]);
@@ -45,7 +47,7 @@ export const upsertVectors = async (filePath, chunks, embeddingsArrays, index) =
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     const vector = {
-      id: `${filePath}-${i}`,
+      id: `${filePath}-${i}-${uuidv4()}`,
       values: embeddingsArrays[i],
       metadata: {
         ...chunk.metadata,
@@ -55,6 +57,7 @@ export const upsertVectors = async (filePath, chunks, embeddingsArrays, index) =
       }
     };
 
+    console.log("vector ID:", vector.id);
     batch.push(vector);
 
     // upsert vectors in batches of 100

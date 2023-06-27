@@ -31,17 +31,11 @@ export const queryPineconeAndQueryLLM = async (question, indexName, client) => {
 }
 
 const queryLLM = async (question, queryResponse) => {
-  const llm = new OpenAI({
-    model: "gpt-3.5-turbo"
-  });
+  const llm = new OpenAI();
   const chain = loadQAStuffChain(llm);
 
   // concatinate query results
-  // const concatenatedPageContent = queryResponse.matches.map((match) => match.metadata.pageContent).join(" ");
-  const concatenatedPageContent = queryResponse.matches.map((match) => {
-    console.log("\nmatch.metadata.pageContent\n", match.metadata.pageContent);  
-    return match.metadata.pageContent;
-  }).join(" ");
+  const concatenatedPageContent = queryResponse.matches.map((match) => match.metadata.pageContent).join(" ");
 
   const result = await chain.call({
     input_documents: [new Document({ pageContent: concatenatedPageContent })],
